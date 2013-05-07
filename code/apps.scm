@@ -31,11 +31,6 @@
   (rule 'V '("ate"))
 ))
 
-
-
-
-
-
 (define (string-rule-set . rules)
   (make-symbol-handler
     no-consume!
@@ -54,30 +49,51 @@
   (rule 'NP '(Number N))
   (rule-set-rule 'Number (string-rule-set
     (rule 'Number '(Digit))
-	(rule 'Number '(Tens "-" Digit))
-	(rule 'Number '(Hundreds " " Digit))
-	(rule 'Number '(Hundreds " " Tens "-" Digit))
-	(rule 'Digit '("two"))
-	(rule 'Digit '("three"))
-	(rule 'Tens '("twenty"))
-	(rule 'Tens '("thirty"))
-	(rule 'Hundreds '(Digit "hundred"))
+    (rule 'Number '(Tens "-" Digit))
+    (rule 'Number '(Hundreds " " Digit))
+    (rule 'Number '(Hundreds " " Tens "-" Digit))
+    (rule 'Digit '("two"))
+    (rule 'Digit '("three"))
+    (rule 'Tens '("twenty"))
+    (rule 'Tens '("thirty"))
+    (rule 'Hundreds '(Digit "hundred"))
   ))
   (rule 'N '("men"))
   (rule 'VP '(V))
   (rule 'V '("ran"))
 ))
 
+(define  ((make-cfg-parser root . rules) input)
+  (let ((result
+          ((make-symbol-handler
+            (lambda (symbol is-terminal?)
+              (if (is-terminal? symbol)   
+                  (if (string-prefix? symbol input)
+                    (amb-set! input (string-tail input (string-length symbol)))
+                    (amb))))
+            (lambda (symbol) (not (assq symbol rules)))
+            (lambda (symbol) (filter (lambda (e) (eq? (car e) symbol)) rules))
+            (lambda (symbol children) `(,symbol ,@children)))
+            root)))
+    (if (not (string-null? input))
+        (amb)
+        result))
+)
 
-
-
-
-
+(define cfg-parser (make-cfg-parser 'S 
+                                    (rule 'S '(NP))
+                                    (rule 'S '(NP VP))
+                                    (rule 'NP '(Det N))
+                                    (rule 'Det '("the"))
+                                    (rule 'N '("man"))
+                                    (rule 'N '("bear"))
+                                    (rule 'VP '(V))
+                                    (rule 'V '("ran"))
+                                    (rule 'V '("ate"))))
 
 (define (rule in-symbol out-symbols prob)
   (list in-symbol (make-rule-handler in-symbol out-symbols prob) prob)
 )
-
 
 (define (randomize r)
   (let ((total-prob (reduce + 0 (map caddr r))))
@@ -132,6 +148,74 @@
 ))
 |#
 
+(define (edge in-symbol out-symbols)
+  (list in-symbol (make-rule-handler in-symbol out-symbols)))
+
+(define ((make-path-finder start . edges) goal)
+  (define visited '())
+  (with-breadth-first-schedule
+    (lambda ()
+      ((make-symbol-handler
+        (lambda (symbol is-terminal?)
+          (if (memq symbol visited)
+            (amb)
+            (set! visited (cons symbol visited))))
+        (lambda (symbol)  (eq? symbol goal))
+        (lambda (symbol) (filter (lambda (e) (eq? (car e) symbol)) edges))
+        (lambda (symbol children) 
+          (cons symbol
+                (apply append 
+                      (map (lambda (child) 
+                              (if (list? child) 
+                                  child
+                                  (list child))) 
+                            children)))))
+        start))
+  )
+)
+
+(define graph-searcher (make-path-finder 'A 
+                                    (edge 'A '(B))
+                                    (edge 'A '(C))
+                                    (edge 'B '(A))
+                                    (edge 'B '(D))
+                                    (edge 'B '(E))
+                                    (edge 'C '(F))
+                                    (edge 'C '(G))
+                                    (edge 'E '(H))))
+                                    
+;;; Not Working ;;;                              
+(define ((make-graph-explorer . edges) start)
+  (define visited '())
+  (with-breadth-first-schedule
+    (lambda ()
+      ((make-symbol-handler
+        (lambda (symbol is-terminal?)
+          (pp symbol)
+          (if (is-terminal? symbol) 
+            (amb)
+            (set! visited (cons symbol visited))))
+        (lambda (symbol)  (and (memq symbol visited) (not (eq? symbol (car visited) ))))
+        (lambda (symbol) (filter (lambda (e) (eq? (car e) symbol)) edges))
+        (lambda (symbol children) 
+          (cons symbol
+                (apply append 
+                      (map (lambda (child) 
+                              (if (list? child) 
+                                  child
+                                  '())) 
+                            children)))))
+       start))))
+
+
+(define graph-explorer (make-graph-explorer
+  (edge 'A '(B))
+  (edge 'A '(C))
+  (edge 'B '(D))
+  (edge 'B '(E))
+  (edge 'C '(F))
+  (edge 'C '(G))
+  (edge 'E '(H))))
 
 
 
