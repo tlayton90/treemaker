@@ -70,10 +70,10 @@
                   (if (string-prefix? symbol input)
                     (amb-set! input (string-tail input (string-length symbol)))
                     (amb))))
-            (lambda (symbol) (not (assq symbol rules)))
-            (lambda (symbol) (filter (lambda (e) (eq? (car e) symbol)) rules))
-            (lambda (symbol children) `(,symbol ,@children)))
-            root)))
+            (make-alist-is-terminal? rules)
+            (make-alist-get-rules rules)
+            tree-format)
+          root)))
     (if (not (string-null? input))
         (amb)
         result))
@@ -159,7 +159,7 @@
             (amb)
             (set! visited (cons symbol visited))))
         (lambda (symbol)  (eq? symbol goal))
-        (lambda (symbol) (filter (lambda (e) (eq? (car e) symbol)) edges))
+        (make-alist-get-rules edges)
         (lambda (symbol children) 
           (cons symbol
                 (apply append 
