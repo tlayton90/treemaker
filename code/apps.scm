@@ -146,10 +146,10 @@
 ))
 |#
 
-(define (edge in-symbol out-symbols)
-  (list in-symbol (make-rule-handler in-symbol out-symbols)))
+(define (edge in-symbol out-symbol)
+  (list in-symbol (make-rule-handler in-symbol (list out-symbol))))
 
-(define ((make-path-finder start . edges) goal)
+(define ((make-path-finder . edges) start goal)
   (define visited '())
   (with-breadth-first-schedule
     (lambda ()
@@ -172,17 +172,24 @@
   )
 )
 
-(define graph-searcher (make-path-finder 'A 
-                                    (edge 'A '(B))
-                                    (edge 'A '(C))
-                                    (edge 'B '(A))
-                                    (edge 'B '(D))
-                                    (edge 'B '(E))
-                                    (edge 'C '(F))
-                                    (edge 'C '(G))
-                                    (edge 'E '(H))))
+(define graph-searcher (make-path-finder
+                                    (edge 'A 'B)
+                                    (edge 'A 'C)
+                                    (edge 'B 'A)
+                                    (edge 'B 'D)
+                                    (edge 'B 'E)
+                                    (edge 'C 'F)
+                                    (edge 'C 'G)
+                                    (edge 'E 'H)))
                                     
-;;; Not Working ;;;                              
+									
+									
+									
+;;; Not Working ;;;     
+(define (edge-list in-symbol out-symbols)
+  (list in-symbol (make-rule-handler in-symbol out-symbols))
+)
+                         
 (define ((make-graph-explorer . edges) start)
   (define visited '())
   (with-breadth-first-schedule
@@ -207,22 +214,7 @@
 
 
 (define graph-explorer (make-graph-explorer
-  (edge 'A '(B))
-  (edge 'A '(C))
-  (edge 'B '(D))
-  (edge 'B '(E))
-  (edge 'C '(F))
-  (edge 'C '(G))
-  (edge 'E '(H))))
-
-
-
-
-#| some example application ideas
-a CFG parser
-	get-rule returns an alternation of all matching rules
-	consume! checks terminal symbols against the next symbol in the input sequence, and fails if it doesn't
-a PCFG generator
-	get-rule uses rule probabilities to return a weighted-random-order alternation of all matching rules
-various graph operations
-|#
+  (edge-list 'A '(B C))
+  (edge-list 'B '(D E))
+  (edge-list 'C '(F G))
+  (edge-list 'E '(H))))
