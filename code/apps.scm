@@ -19,7 +19,6 @@
   )
 )
 
-
 (define cfg (rule-set
   (rule 'S '(NP VP))
   (rule 'NP '(Det N))
@@ -101,7 +100,6 @@
 	(make-alist-is-terminal? rules)
 	(lambda (symbol) (randomize ((make-alist-get-rules rules) symbol)))
 	(lambda (symbol children prob)
-	  ;(pp symbol) (pp (map (lambda (n) (if (is-terminal? n) 1 (list-ref n (- (length n) 1)))) children))
 	  `(
 	    ,symbol
 		,@children
@@ -122,15 +120,6 @@
   (rule 'V '("ran") .75)
   (rule 'V '("ate") .25)
 ))
-
-#|
-(define pcfg (rule-set
-  (rule '1 '("1" 2 "1") 3)
-  (rule '2 '("2" 1 "2") 3)
-  (rule '1 '() 1)
-  (rule '2 '() 1)
-))
-|#
 
 
 
