@@ -196,20 +196,12 @@
     (lambda ()
       ((make-symbol-handler
         (lambda (symbol is-terminal?)
-          (pp symbol)
-          (if (is-terminal? symbol) 
-            (amb)
+          (if (not (is-terminal? symbol))
             (set! visited (cons symbol visited))))
-        (lambda (symbol)  (and (memq symbol visited) (not (eq? symbol (car visited) ))))
-        (lambda (symbol) (filter (lambda (e) (eq? (car e) symbol)) edges))
-        (lambda (symbol children) 
-          (cons symbol
-                (apply append 
-                      (map (lambda (child) 
-                              (if (list? child) 
-                                  child
-                                  '())) 
-                            children)))))
+        (lambda (symbol) (or (memq symbol (cdr visited)) ((make-alist-is-terminal? edges) symbol)))
+        (make-alist-get-rules edges)
+		tree-format
+		)
        start))))
 
 
@@ -217,4 +209,5 @@
   (edge-list 'A '(B C))
   (edge-list 'B '(D E))
   (edge-list 'C '(F G))
-  (edge-list 'E '(H))))
+  (edge-list 'E '(H A))
+))
