@@ -137,8 +137,6 @@
   (rule 'V '("ate") .25)
 ))
 
-<<<<<<< HEAD
-=======
 #|
 (define pcfg (rule-set
   (rule '1 '("1" 2 "1") 3)
@@ -216,7 +214,6 @@
   (edge 'C '(F))
   (edge 'C '(G))
   (edge 'E '(H))))
->>>>>>> ab7f6903b58a0ca6876f74aef01b0bb1396c07c0
 
 
 
