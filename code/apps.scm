@@ -80,9 +80,8 @@
 )
 
 (define cfg-parser (make-cfg-parser 'S 
-                                    (rule 'S '(NP))
-                                    (rule 'S '(NP VP))
-                                    (rule 'NP '(Det N))
+                                    (rule 'S '(NP " " VP "."))
+                                    (rule 'NP '(Det " " N))
                                     (rule 'Det '("the"))
                                     (rule 'N '("man"))
                                     (rule 'N '("bear"))
