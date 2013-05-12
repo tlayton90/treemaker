@@ -4,7 +4,20 @@
 (define ((make-alist-is-terminal? rules) symbol) (not (assq symbol rules)))
 (define ((make-alist-get-rules rules) symbol) (filter (lambda (e) (eq? (car e) symbol)) rules))
 (define (tree-format symbol children) `(,symbol ,@children))
+(define (make-parse-stack input)
+    (list (lambda (symbol is-terminal?)
+            (pp symbol)
+            (if (is-terminal? symbol)   
+              (if (string-prefix? symbol input)
+                (amb-set! input (string-tail input (string-length symbol)))
+                (amb))))
+          (lambda (result)
+            (if (not (string-null? input))
+              (amb)
+              result))))
 
+(define (get-parse-stack-consume parse-stack) (car parse-stack))
+(define (get-parse-stack-final-check parse-stack) (cadr parse-stack))
 
 (define (rule in-symbol out-symbols)
   (list in-symbol (make-rule-handler in-symbol out-symbols))
@@ -63,21 +76,15 @@
 ))
 
 (define  ((make-cfg-parser root . rules) input)
-  (let ((result
-          ((make-symbol-handler
-            (lambda (symbol is-terminal?)
-              (if (is-terminal? symbol)   
-                  (if (string-prefix? symbol input)
-                    (amb-set! input (string-tail input (string-length symbol)))
-                    (amb))))
-            (lambda (symbol) (not (assq symbol rules)))
-            (lambda (symbol) (filter (lambda (e) (eq? (car e) symbol)) rules))
-            (lambda (symbol children) `(,symbol ,@children)))
+  (let* ((parse-stack (make-parse-stack input))
+         (result
+            ((make-symbol-handler
+              (get-parse-stack-consume parse-stack)
+              (make-alist-is-terminal? rules)
+              (make-alist-get-rules rules)
+              tree-format)
             root)))
-    (if (not (string-null? input))
-        (amb)
-        result))
-)
+    ((get-parse-stack-final-check parse-stack) result)))
 
 (define cfg-parser (make-cfg-parser 'S 
                                     (rule 'S '(NP " " VP "."))
@@ -89,7 +96,7 @@
                                     (rule 'V '("ran"))
                                     (rule 'V '("ate"))))
 
-(define (rule in-symbol out-symbols prob)
+(define (p-rule in-symbol out-symbols prob)
   (list in-symbol (make-rule-handler in-symbol out-symbols prob) prob)
 )
 
@@ -109,7 +116,7 @@
   )
 )
 
-(define (rule-set . rules)
+(define (p-rule-set . rules)
   (make-symbol-handler
     no-consume!
 	(make-alist-is-terminal? rules)
@@ -125,15 +132,15 @@
 )
 
 
-(define pcfg (rule-set
-  (rule 'S '(NP VP) 1)
-  (rule 'NP '(Det N) 1)
-  (rule 'Det '("the") 1)
-  (rule 'N '("man") .75)
-  (rule 'N '("bear") .25)
-  (rule 'VP '(V) 1)
-  (rule 'V '("ran") .75)
-  (rule 'V '("ate") .25)
+(define pcfg (p-rule-set
+  (p-rule 'S '(NP VP) 1)
+  (p-rule 'NP '(Det N) 1)
+  (p-rule 'Det '("the") 1)
+  (p-rule 'N '("man") .75)
+  (p-rule 'N '("bear") .25)
+  (p-rule 'VP '(V) 1)
+  (p-rule 'V '("ran") .75)
+  (p-rule 'V '("ate") .25)
 ))
 
 #|
@@ -158,7 +165,7 @@
             (amb)
             (set! visited (cons symbol visited))))
         (lambda (symbol)  (eq? symbol goal))
-        (lambda (symbol) (filter (lambda (e) (eq? (car e) symbol)) edges))
+        (make-alist-get-rules edges)
         (lambda (symbol children) 
           (cons symbol
                 (apply append 
@@ -180,33 +187,3 @@
                                     (edge 'C 'F)
                                     (edge 'C 'G)
                                     (edge 'E 'H)))
-                                    
-									
-									
-									
-;;; Not Working ;;;     
-(define (edge-list in-symbol out-symbols)
-  (list in-symbol (make-rule-handler in-symbol out-symbols))
-)
-                         
-(define ((make-graph-explorer . edges) start)
-  (define visited '())
-  (with-breadth-first-schedule
-    (lambda ()
-      ((make-symbol-handler
-        (lambda (symbol is-terminal?)
-          (if (not (is-terminal? symbol))
-            (set! visited (cons symbol visited))))
-        (lambda (symbol) (or (memq symbol (cdr visited)) ((make-alist-is-terminal? edges) symbol)))
-        (make-alist-get-rules edges)
-		tree-format
-		)
-       start))))
-
-
-(define graph-explorer (make-graph-explorer
-  (edge-list 'A '(B C))
-  (edge-list 'B '(D E))
-  (edge-list 'C '(F G))
-  (edge-list 'E '(H A))
-))
