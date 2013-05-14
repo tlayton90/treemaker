@@ -1,8 +1,8 @@
 ;;; Some example applications of the system
 
 (define (no-consume! symbol is-terminal?) #!unspecific)
-(define ((make-alist-is-terminal? rules) symbol) (not (assq symbol rules)))
-(define ((make-alist-get-rules rules) symbol) (filter (lambda (e) (eq? (car e) symbol)) rules))
+(define ((make-alist-is-terminal? rules) symbol) (not (assoc symbol rules)))
+(define ((make-alist-get-rules rules) symbol) (filter (lambda (e) (equal? (car e) symbol)) rules))
 (define (tree-format symbol children) `(,symbol ,@children))
 (define (make-parse-stack input)
     (list (lambda (symbol is-terminal?)
@@ -164,7 +164,7 @@
           (if (memq symbol visited)
             (amb)
             (set! visited (cons symbol visited))))
-        (lambda (symbol)  (eq? symbol goal))
+        (lambda (symbol)  (equal? symbol goal))
         (make-alist-get-rules edges)
         (lambda (symbol children) 
           (cons symbol
